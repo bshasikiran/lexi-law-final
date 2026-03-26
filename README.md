@@ -1,4 +1,4 @@
-# ⚖️ AskLegal.ai-AI-Legal-Assistant ⚖️
+# ⚖️ Lexilaw.ai-AI-Legal-Assistant ⚖️
 An AI assistant to help with legal queries, with an RAG model trained on the Indian Penal Code, and real case documents, to provide accurate, in-depth, and effective solutions for court cases and lawsuits. With a built-in legal document generator and judgment prediction models, this tool shows the potential of AI and deep learning in the legal atmosphere.
 
 ## Key Features
@@ -27,5 +27,5 @@ AI Legal Assistant has been deployed here:
 3. Create Legal Documents: AI Legal Assistant can generate content for legal documents, extracting information from your prompts.
 
 ## Creators
-V Kamal Jerome | Shakthireka Karthikeyan | Kopika M | Deepesh Raj AY 
 
+B SHASI KIRAN  ||  HARI TEJA  || VAISHNAVI 
