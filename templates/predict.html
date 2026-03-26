@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LexiLaw — Judgment Predictor</title>
+  <meta name="description" content="AI-powered case analysis and judgment prediction using Indian law."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-primary: #f8f9fc; --bg-secondary: #ffffff;
+      --bg-card: rgba(255,255,255,0.85); --bg-glass: rgba(0,0,0,0.02);
+      --border-color: rgba(0,0,0,0.08); --text-primary: #1e293b;
+      --text-secondary: #475569; --text-muted: #94a3b8;
+      --accent-purple: #6366f1; --accent-amber: #f59e0b; --accent-blue: #3b82f6;
+      --accent-emerald: #10b981; --accent-rose: #ef4444;
+      --gradient-primary: linear-gradient(135deg, #6366f1, #3b82f6);
+      --gradient-amber: linear-gradient(135deg, #f59e0b, #ef4444);
+      --shadow-glow: 0 4px 20px rgba(99,102,241,0.12);
+      --shadow-soft: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-medium: 0 4px 12px rgba(0,0,0,0.08);
+      --input-bg: #f1f5f9; --pre-bg: rgba(0,0,0,0.04);
+      --orb1: rgba(245,158,11,0.06); --orb2: rgba(99,102,241,0.04);
+      --header-bg: rgba(248,249,252,0.85); --scrollbar-thumb: #cbd5e1;
+    }
+    [data-theme="dark"] {
+      --bg-primary: #0a0e1a; --bg-secondary: #111827;
+      --bg-card: rgba(17,24,39,0.7); --bg-glass: rgba(255,255,255,0.03);
+      --border-color: rgba(255,255,255,0.06); --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8; --text-muted: #64748b;
+      --accent-purple: #818cf8; --accent-amber: #fbbf24; --accent-blue: #60a5fa;
+      --accent-emerald: #34d399; --accent-rose: #fb7185;
+      --shadow-glow: 0 0 30px rgba(99,102,241,0.15);
+      --shadow-soft: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-medium: 0 4px 12px rgba(0,0,0,0.3);
+      --input-bg: rgba(0,0,0,0.2); --pre-bg: rgba(0,0,0,0.3);
+      --orb1: rgba(251,191,36,0.08); --orb2: rgba(129,140,248,0.06);
+      --header-bg: rgba(10,14,26,0.8); --scrollbar-thumb: rgba(100,100,100,0.3);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-primary); color: var(--text-primary); height: 100vh; overflow: hidden; transition: background 0.3s, color 0.3s; }
+    .animated-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .animated-bg::before { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, var(--orb1) 0%, transparent 70%); top: -100px; right: -100px; animation: float 16s ease-in-out infinite; }
+    .animated-bg::after { content: ''; position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, var(--orb2) 0%, transparent 70%); bottom: -100px; left: -100px; animation: float 20s ease-in-out infinite reverse; }
+    @keyframes float { 0%, 100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-30px) scale(1.05); } 66% { transform: translate(-20px,20px) scale(0.95); } }
+    .app-container { display: flex; height: 100vh; position: relative; z-index: 1; }
+    .sidebar { width: 280px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.3s, background 0.3s; z-index: 20; box-shadow: var(--shadow-soft); }
+    .sidebar-header { padding: 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-color); }
+    .sidebar-header .logo { font-size: 22px; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
+    .sidebar-header .logo-icon { font-size: 28px; }
+    .chat-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .chat-list::-webkit-scrollbar { width: 4px; } .chat-list::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+    .chat-item { display: block; width: 100%; text-align: left; padding: 10px 14px; border-radius: 10px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; cursor: pointer; transition: all 0.2s; margin-bottom: 2px; font-family: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-item:hover { background: var(--bg-glass); color: var(--text-primary); }
+    .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border-color); }
+    .new-chat-btn { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--gradient-primary); color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; }
+    .new-chat-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-glow); }
+    .main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
+    .header-nav { padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); background: var(--header-bg); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 10; transition: background 0.3s; }
+    .nav-tabs { display: flex; gap: 4px; }
+    .nav-tab { padding: 8px 20px; border-radius: 10px; border: none; background: transparent; color: var(--text-muted); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s; text-decoration: none; font-family: inherit; }
+    .nav-tab:hover { color: var(--text-primary); background: var(--bg-glass); }
+    .nav-tab.active { background: var(--gradient-amber); color: white; box-shadow: 0 4px 15px rgba(245,158,11,0.25); }
+    .theme-toggle { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-card); cursor: pointer; transition: all 0.3s; font-family: inherit; color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+    .theme-toggle:hover { border-color: var(--accent-purple); color: var(--text-primary); }
+    .page-content { padding: 32px 24px; max-width: 900px; margin: 0 auto; width: 100%; }
+    .page-title { font-size: 32px; font-weight: 700; margin-bottom: 8px; background: var(--gradient-amber); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .page-subtitle { color: var(--text-secondary); font-size: 15px; margin-bottom: 32px; }
+    .method-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .method-tab { padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.3s; font-family: inherit; box-shadow: var(--shadow-soft); }
+    .method-tab.active { border-color: var(--accent-amber); color: var(--accent-amber); background: rgba(245,158,11,0.06); }
+    .method-tab:hover { border-color: var(--accent-amber); }
+    .form-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: var(--shadow-soft); }
+    .form-card label { display: block; font-weight: 600; font-size: 15px; margin-bottom: 12px; }
+    .file-upload-zone { border: 2px dashed var(--border-color); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 16px; position: relative; }
+    .file-upload-zone:hover { border-color: var(--accent-amber); background: rgba(245,158,11,0.02); }
+    .file-upload-zone.has-file { border-color: var(--accent-emerald); background: rgba(16,185,129,0.03); }
+    .file-upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .file-upload-zone .upload-icon { font-size: 40px; margin-bottom: 12px; }
+    .file-upload-zone p { color: var(--text-secondary); font-size: 14px; }
+    .file-upload-zone .supported { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+    .file-name-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; color: var(--accent-emerald); font-size: 13px; margin-top: 8px; }
+    .case-textarea { width: 100%; min-height: 200px; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-primary); font-size: 14px; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.3s; font-family: inherit; }
+    .case-textarea:focus { border-color: var(--accent-amber); box-shadow: 0 0 0 3px rgba(245,158,11,0.06); }
+    .case-textarea::placeholder { color: var(--text-muted); }
+    .analyze-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 16px; margin-top: 16px; border-radius: 12px; border: none; background: var(--gradient-amber); color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+    .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,158,11,0.25); }
+    .analyze-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; animation: fadeIn 0.4s ease; margin-bottom: 24px; box-shadow: var(--shadow-soft); }
+    .verdict-banner { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+    .verdict-banner.guilty { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); }
+    .verdict-banner.not-guilty { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); }
+    .verdict-banner.neutral { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); }
+    .verdict-icon { font-size: 40px; } .verdict-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .verdict-text .confidence { font-size: 14px; color: var(--text-secondary); }
+    .confidence-badge { display: inline-flex; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+    .confidence-badge.high { background: rgba(16,185,129,0.1); color: var(--accent-emerald); }
+    .confidence-badge.medium { background: rgba(245,158,11,0.1); color: var(--accent-amber); }
+    .confidence-badge.low { background: rgba(239,68,68,0.1); color: var(--accent-rose); }
+    .analysis-content { background: var(--pre-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; font-size: 14px; line-height: 1.8; color: var(--text-secondary); max-height: 500px; overflow-y: auto; }
+    .analysis-content::-webkit-scrollbar { width: 6px; } .analysis-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 6px; }
+    .analysis-content h1, .analysis-content h2, .analysis-content h3 { color: var(--text-primary); margin: 14px 0 8px; }
+    .analysis-content strong { color: var(--accent-amber); }
+    .analysis-content ul, .analysis-content ol { padding-left: 20px; margin-bottom: 10px; }
+    .analysis-content p { margin-bottom: 10px; }
+    .error-msg { color: var(--accent-rose); background: rgba(239,68,68,0.06); padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-top: 16px; }
+    .footer-hint { text-align: center; font-size: 11px; color: var(--text-muted); padding: 16px; }
+    .footer-hint a { color: var(--accent-purple); text-decoration: none; } .footer-hint a:hover { text-decoration: underline; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .mobile-toggle { display: none; }
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-toggle { display: flex; position: fixed; bottom: 24px; left: 16px; z-index: 30; width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-primary); align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-medium); }
+      .page-title { font-size: 24px; } .method-tabs { flex-direction: column; }
+    }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 15; }
+    .sidebar-overlay.active { display: block; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="animated-bg"></div>
+  <div class="app-container">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">⚖️</span>
+        <span class="logo">LexiLaw</span>
+      </div>
+      <nav class="chat-list" id="chat-list">
+        {% for chat in chat_list %}
+        <button class="chat-item" onclick="window.location.href='/'" title="{{ chat.title }}">{{ chat.title }}</button>
+        {% endfor %}
+      </nav>
+      <div class="sidebar-footer">
+        <button class="new-chat-btn" onclick="window.location.href='/'">
+          <i data-lucide="plus" style="width:18px;height:18px"></i> New Conversation
+        </button>
+      </div>
+    </aside>
+    <button class="mobile-toggle" id="sidebar-toggle"><i data-lucide="menu" style="width:20px;height:20px"></i></button>
+
+    <main class="main-content">
+      <header class="header-nav">
+        <div class="nav-tabs">
+          <a href="/" class="nav-tab">💬 Chat</a>
+          <a href="/predict" class="nav-tab active">🔍 Predict</a>
+          <a href="/generate" class="nav-tab">📜 Generate</a>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">
+          <span id="theme-icon">🌙</span><span id="theme-label">Dark</span>
+        </button>
+      </header>
+
+      <div class="page-content">
+        <h1 class="page-title">🔍 Judgment Predictor</h1>
+        <p class="page-subtitle">Upload a case file or paste case details for AI-powered verdict prediction and legal analysis.</p>
+
+        <div class="method-tabs">
+          <button class="method-tab active" id="tab-upload" onclick="switchTab('upload')">📁 Upload File</button>
+          <button class="method-tab" id="tab-text" onclick="switchTab('text')">✍️ Paste Case Text</button>
+        </div>
+
+        <div class="form-card" id="upload-section">
+          <label>Upload Legal Document</label>
+          <div class="file-upload-zone" id="upload-zone">
+            <input type="file" id="file-upload" accept=".pdf,.docx,.png,.jpg,.jpeg"/>
+            <div class="upload-icon">📂</div>
+            <p>Drag &amp; drop or click to upload</p>
+            <p class="supported">Supported: PDF, DOCX, PNG, JPG</p>
+          </div>
+          <div id="file-badge" style="display:none;"></div>
+          <input type="hidden" id="file-type" value=""/>
+          <button class="analyze-btn" id="analyze-file-btn" onclick="analyzeFile()">
+            <i data-lucide="search" style="width:20px;height:20px"></i> Analyze Case
+          </button>
+        </div>
+
+        <div class="form-card hidden" id="text-section">
+          <label>Paste Case Details</label>
+          <textarea id="case-text" class="case-textarea" placeholder="Paste the complete case details here including:&#10;- Facts of the case&#10;- Charges/claims&#10;- Evidence presented&#10;- Arguments from both parties&#10;- Any prior court observations..."></textarea>
+          <button class="analyze-btn" id="analyze-text-btn" onclick="analyzeText()">
+            <i data-lucide="search" style="width:20px;height:20px"></i> Analyze Case
+          </button>
+        </div>
+
+        <div id="error-msg" class="error-msg" style="display:none;"></div>
+
+        <div id="result-section" style="display:none;">
+          <div class="result-card">
+            <div class="verdict-banner" id="verdict-banner">
+              <span class="verdict-icon" id="verdict-icon">⚖️</span>
+              <div class="verdict-text">
+                <h2 id="verdict-label">—</h2>
+                <p class="confidence">Confidence: <span class="confidence-badge" id="confidence-badge">—</span></p>
+              </div>
+            </div>
+            <h3 style="margin-bottom:12px;font-size:16px;">📋 Full Analysis</h3>
+            <div class="analysis-content" id="analysis-content"></div>
+          </div>
+        </div>
+
+        <div class="footer-hint">
+          Powered by <strong>LexiLaw</strong> · 
+          <a href="https://github.com/bshasikiran" target="_blank">GitHub</a> · 
+          <a href="mailto:bshasikiran@gmail.com">Contact</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    function setTheme(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('lexilaw-theme', t); document.getElementById('theme-icon').textContent = t==='dark'?'☀️':'🌙'; document.getElementById('theme-label').textContent = t==='dark'?'Light':'Dark'; }
+    function toggleTheme() { const c = document.documentElement.getAttribute('data-theme')||'light'; setTheme(c==='dark'?'light':'dark'); }
+    (function(){ setTheme(localStorage.getItem('lexilaw-theme')||'light'); })();
+
+    const sidebar = document.getElementById('sidebar'), overlay = document.getElementById('sidebar-overlay');
+    document.getElementById('sidebar-toggle').addEventListener('click', () => { sidebar.classList.toggle('open'); overlay.classList.toggle('active'); });
+    overlay.addEventListener('click', () => { sidebar.classList.remove('open'); overlay.classList.remove('active'); });
+
+    function switchTab(tab) {
+      document.getElementById('upload-section').classList.toggle('hidden', tab !== 'upload');
+      document.getElementById('text-section').classList.toggle('hidden', tab !== 'text');
+      document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+      document.getElementById('tab-text').classList.toggle('active', tab === 'text');
+    }
+
+    document.getElementById('file-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      let type = '';
+      if (ext === 'pdf') type = 'pdf'; else if (ext === 'docx') type = 'docx';
+      else if (['png','jpg','jpeg'].includes(ext)) type = 'image';
+      if (!type) { alert('Unsupported file type.'); e.target.value = ''; return; }
+      document.getElementById('file-type').value = type;
+      document.getElementById('upload-zone').classList.add('has-file');
+      document.getElementById('file-badge').style.display = 'block';
+      document.getElementById('file-badge').innerHTML = `<span class="file-name-badge">📄 ${file.name}</span>`;
+    });
+
+    async function analyzeFile() {
+      const fileInput = document.getElementById('file-upload'), fileType = document.getElementById('file-type').value;
+      if (!fileInput.files[0] || !fileType) { alert('Please upload a file first.'); return; }
+      const formData = new FormData(); formData.append('file', fileInput.files[0]); formData.append('file_type', fileType);
+      const btn = document.getElementById('analyze-file-btn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...'; hideError();
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.error) { showError(data.error); return; } displayResult(data.result);
+      } catch (err) { showError('Network error. Please try again.'); }
+      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="search" style="width:20px;height:20px"></i> Analyze Case'; lucide.createIcons(); }
+    }
+
+    async function analyzeText() {
+      const caseText = document.getElementById('case-text').value.trim();
+      if (!caseText) { alert('Please paste case details.'); return; }
+      const btn = document.getElementById('analyze-text-btn');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing...'; hideError();
+      try {
+        const res = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ case_text: caseText }) });
+        const data = await res.json();
+        if (data.error) { showError(data.error); return; } displayResult(data.result);
+      } catch (err) { showError('Network error. Please try again.'); }
+      finally { btn.disabled = false; btn.innerHTML = '<i data-lucide="search" style="width:20px;height:20px"></i> Analyze Case'; lucide.createIcons(); }
+    }
+
+    function displayResult(result) {
+      const banner = document.getElementById('verdict-banner');
+      const vl = (result.verdict || '').toLowerCase();
+      if (vl.includes('guilty') && !vl.includes('not guilty')) { banner.className = 'verdict-banner guilty'; document.getElementById('verdict-icon').textContent = '⛔'; }
+      else if (vl.includes('not guilty') || vl.includes('not liable') || vl.includes('acquit')) { banner.className = 'verdict-banner not-guilty'; document.getElementById('verdict-icon').textContent = '✅'; }
+      else { banner.className = 'verdict-banner neutral'; document.getElementById('verdict-icon').textContent = '⚖️'; }
+      document.getElementById('verdict-label').textContent = result.verdict || 'Analysis Complete';
+      const cb = document.getElementById('confidence-badge'), conf = (result.confidence||'medium').toLowerCase();
+      cb.textContent = result.confidence || 'Medium'; cb.className = `confidence-badge ${conf}`;
+      document.getElementById('analysis-content').innerHTML = marked.parse(result.analysis || '');
+      document.getElementById('result-section').style.display = 'block';
+      document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+    }
+    function showError(msg) { document.getElementById('error-msg').textContent = msg; document.getElementById('error-msg').style.display = 'block'; document.getElementById('result-section').style.display = 'none'; }
+    function hideError() { document.getElementById('error-msg').style.display = 'none'; }
+  </script>
+</body>
+</html>
